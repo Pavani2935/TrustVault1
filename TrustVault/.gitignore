@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+# Local data and secrets - never commit
+instance/
+.env
+*.db
+*.db-wal
+*.db-shm
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

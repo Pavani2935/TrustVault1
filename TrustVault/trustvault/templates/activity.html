@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "macros.html" import when %}
+{% block title %}Access history{% endblock %}
+{% block content %}
+<div class="page-head"><div><p class="muted small mb0">{% if doc.deleted_at %}<a href="{{ url_for('web.trash') }}">← Trash</a> · {{ doc.title }} (deleted){% else %}<a href="{{ url_for('web.document', doc_id=doc.id) }}">← {{ doc.title }}</a>{% endif %}</p>
+  <h1>Who accessed this document</h1><p class="muted">Every view, download, change and refused attempt, newest first.</p></div></div>
+<div class="card"><div class="table-wrap"><table>
+  <thead><tr><th>#</th><th>When (UTC)</th><th>Who</th><th>What</th><th>Result</th><th>Details</th></tr></thead>
+  <tbody>{% for e in events %}
+    <tr><td class="mono">{{ e.seq }}</td><td>{{ when(e.event_time) }}</td><td>{{ e.actor_username }}{% if e.actor_role %} <span class="muted small">{{ e.actor_role }}</span>{% endif %}</td>
+      <td>{{ e.action }}{% if e.target %} → {{ e.target }}{% endif %}</td>
+      <td><span class="badge badge-{{ e.outcome }}">{{ e.outcome }}</span></td>
+      <td class="wrap details-json">{{ e.details }}</td></tr>
+  {% else %}<tr><td colspan="6" class="empty">No events.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

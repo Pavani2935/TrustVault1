@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% from "macros.html" import when %}
+{% block title %}Inventory{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Document inventory</h1><p class="muted">Metadata only. There is deliberately no download link here: administrators cannot read documents they were not granted.</p></div></div>
+<div class="card"><div class="table-wrap"><table>
+  <thead><tr><th>Title</th><th>Owner</th><th>Category</th><th>Grants</th><th>Last download</th><th>Refused</th><th>State</th><th></th></tr></thead>
+  <tbody>{% for d in rows %}
+    <tr><td class="wrap">{{ d.title }}</td><td>{{ d.owner }}</td><td>{{ d.category }}</td><td>{{ d.grants }}</td>
+      <td>{{ when(d.last_download) }}</td><td>{% if d.denied %}<span class="badge badge-denied">{{ d.denied }}</span>{% else %}0{% endif %}</td>
+      <td>{% if d.purged_at %}purged{% elif d.deleted_at %}in trash{% else %}live{% endif %}</td>
+      <td><a class="btn btn-sm" href="{{ url_for('admin.audit', document_id=d.id) }}">Activity</a></td></tr>
+  {% else %}<tr><td colspan="8" class="empty">No documents.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

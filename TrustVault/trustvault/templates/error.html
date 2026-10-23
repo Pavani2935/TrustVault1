@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ status }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>{{ status }}</h1>
+  <p>{{ message }}</p>
+  {% if status == 404 %}<p class="muted small">Documents you have not been given look exactly like documents that do not exist.</p>{% endif %}
+  <a class="btn" href="{{ url_for('web.index') }}">Back to documents</a>
+</div>
+{% endblock %}

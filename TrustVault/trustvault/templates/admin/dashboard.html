@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "macros.html" import when %}
+{% block title %}Oversight<section class="card">
+  <h2>Deployment check</h2>
+  <p class="small">Your address as recorded in the audit trail: <span class="mono">{{ client_ip }}</span>
+    · trusted proxy hops: {{ proxy_hops }} · raw X-Forwarded-For: <span class="mono">{{ forwarded_for or '—' }}</span></p>
+  <p class="hint">If the recorded address is your hosting provider's proxy rather than you, adjust TRUSTVAULT_TRUST_PROXY_HOPS (see DEPLOY.md). Never trust more hops than you actually have: extra hops let clients forge their address.</p>
+</section>
+{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Oversight</h1><p class="muted">Activity and permission changes across the vault. Administrators see metadata and evidence, never document contents.</p></div>
+  <a class="btn" href="{{ url_for('admin.audit') }}">Open audit trail</a></div>
+<div class="grid grid-stats">
+  {% for label, key in [('Active users','users'),('Live documents','documents'),('Active grants','grants'),('Events (24h)','events_24h'),('Refused (24h)','denied_24h'),('Downloads (24h)','downloads_24h'),('Open sessions','active_sessions')] %}
+  <div class="card stat"><div class="value">{{ data.stats[key] }}</div><div class="label">{{ label }}</div></div>
+  {% endfor %}
+</div>
+<section class="card">
+  <h2>Worth noticing</h2>
+  {% for a in data.alerts %}
+    <div class="alert alert-{{ a.level }}"><strong>{{ a.title }}</strong> — {{ a.hint }}
+      <a href="{{ url_for('admin.audit', **a.filter) }}">Investigate</a></div>
+  {% else %}
+    <p class="muted">Nothing unusual in the last 24 hours.</p>
+  {% endfor %}
+</section>
+<section class="card">
+  <h2>Recent permission changes</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>When</th><th>Who</th><th>Change</th><th>Document</th><th>Details</th></tr></thead>
+    <tbody>{% for e in data.permission_changes %}
+      <tr><td>{{ when(e.event_time) }}</td><td>{{ e.actor_username }}</td><td>{{ e.action }}{% if e.target %} → {{ e.target }}{% endif %}</td>
+        <td class="mono">{% if e.document_id %}<a href="{{ url_for('admin.audit', document_id=e.document_id) }}">{{ e.document_id[:10] }}…</a>{% else %}—{% endif %}</td>
+        <td class="wrap details-json">{{ e.details }}</td></tr>
+    {% else %}<tr><td colspan="5" class="empty">No permission changes yet.</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+<section class="card">
+  <h2>Deployment check</h2>
+  <p class="small">Your address as recorded in the audit trail: <span class="mono">{{ client_ip }}</span>
+    · trusted proxy hops: {{ proxy_hops }} · raw X-Forwarded-For: <span class="mono">{{ forwarded_for or '—' }}</span></p>
+  <p class="hint">If the recorded address is your hosting provider's proxy rather than you, adjust TRUSTVAULT_TRUST_PROXY_HOPS (see DEPLOY.md). Never trust more hops than you actually have: extra hops let clients forge their address.</p>
+</section>
+{% endblock %}

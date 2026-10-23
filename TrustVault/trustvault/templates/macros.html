@@ -1,0 +1,4 @@
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}">{% endmacro %}
+{% macro perm(p) %}<span class="badge badge-{{ p }}">{{ p }}</span>{% endmacro %}
+{% macro size(n) %}{% if n is none %}—{% elif n < 1024 %}{{ n }} B{% elif n < 1048576 %}{{ '%.1f' % (n / 1024) }} KB{% else %}{{ '%.1f' % (n / 1048576) }} MB{% endif %}{% endmacro %}
+{% macro when(ts) %}{% if ts %}<span title="{{ ts }}">{{ ts[:16].replace('T', ' ') }}</span>{% else %}—{% endif %}{% endmacro %}

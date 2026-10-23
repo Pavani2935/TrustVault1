@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "macros.html" import csrf, size, when with context %}
+{% block title %}Trash{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Trash</h1><p class="muted">Deleted documents are invisible to everyone you shared them with. Restore brings back the previous grants; purge destroys the encrypted contents for good.</p></div></div>
+<div class="card">
+  {% if docs %}<div class="table-wrap"><table>
+    <thead><tr><th>Title</th><th>File</th><th>Deleted</th><th></th></tr></thead>
+    <tbody>{% for d in docs %}
+      <tr><td class="wrap">{{ d.title }}<div class="hint">{{ d.category }}</div></td><td class="wrap">{{ d.original_name }} · {{ size(d.size_bytes) }}</td><td>{{ when(d.deleted_at) }}</td>
+        <td class="actions">
+          <a class="btn btn-sm" href="{{ url_for('web.activity', doc_id=d.id) }}">History</a>
+          <form method="post" action="{{ url_for('web.restore', doc_id=d.id) }}" class="inline">{{ csrf() }}<button class="btn btn-sm" type="submit">Restore</button></form>
+          <form method="post" action="{{ url_for('web.purge', doc_id=d.id) }}" class="inline" data-confirm="Permanently destroy the file contents? This cannot be undone.">{{ csrf() }}<button class="btn btn-sm btn-danger" type="submit">Purge</button></form>
+        </td></tr>
+    {% endfor %}</tbody></table></div>
+  {% else %}<div class="empty">Trash is empty.</div>{% endif %}
+</div>
+{% endblock %}

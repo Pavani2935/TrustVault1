@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "macros.html" import perm, size, when %}
+{% block title %}Documents{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Documents</h1><p class="muted">Only documents you own or were explicitly granted are listed.</p></div>
+  {% if me.role == 'owner' %}<a class="btn btn-primary" href="{{ url_for('web.upload') }}">Upload document</a>{% endif %}
+</div>
+<form class="card" method="get" role="search">
+  <div class="form-row">
+    <div><label for="q">Name</label><input id="q" type="search" name="q" value="{{ filters.q }}" maxlength="100" placeholder="Title or file name"></div>
+    <div><label for="owner">Owner</label><input id="owner" type="text" name="owner" value="{{ filters.owner }}" maxlength="64"></div>
+    <div><label for="category">Category</label>
+      <select id="category" name="category"><option value="">Any</option>
+        {% for c in categories %}<option value="{{ c }}" {% if c == filters.category %}selected{% endif %}>{{ c }}</option>{% endfor %}
+      </select></div>
+    <div><label for="from">Uploaded from</label><input id="from" type="date" name="from" value="{{ filters['from'] }}"></div>
+    <div><label for="to">Uploaded to</label><input id="to" type="date" name="to" value="{{ filters.to }}"></div>
+    <div><label for="scope">Show</label>
+      <select id="scope" name="scope">
+        <option value="all" {% if filters.scope in ('', 'all') %}selected{% endif %}>All I can see</option>
+        <option value="mine" {% if filters.scope == 'mine' %}selected{% endif %}>Owned by me</option>
+        <option value="shared" {% if filters.scope == 'shared' %}selected{% endif %}>Shared with me</option>
+      </select></div>
+  </div>
+  <div class="actions mt"><button class="btn btn-primary" type="submit">Search</button>
+    <a class="btn" href="{{ url_for('web.documents') }}">Clear</a></div>
+</form>
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+<div class="card">
+  {% if docs %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>Title</th><th>Category</th><th>Owner</th><th>File</th><th>Uploaded</th><th>Your access</th></tr></thead>
+    <tbody>
+    {% for d in docs %}
+      <tr>
+        <td class="wrap"><a href="{{ url_for('web.document', doc_id=d.id) }}">{{ d.title }}</a></td>
+        <td>{{ d.category }}</td>
+        <td>{{ d.owner_username }}</td>
+        <td class="wrap"><span class="small">{{ d.original_name }}</span><br><span class="muted small">{{ size(d.size_bytes) }} · v{{ d.current_version }}</span></td>
+        <td>{{ when(d.created_at) }}</td>
+        <td>{{ perm(d.my_permission) }}{% if d.grant_expires_at %}<div class="hint">until {{ d.grant_expires_at[:10] }}</div>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <div class="empty">No documents match. Ask a document owner to grant you access.</div>
+  {% endif %}
+</div>
+{% endblock %}

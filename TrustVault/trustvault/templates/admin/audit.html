@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "macros.html" import csrf, when with context %}
+{% block title %}Audit trail{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Audit trail</h1><p class="muted">Append-only and HMAC-chained. Includes refused attempts.</p></div>
+  <div class="actions">
+    <form method="post" action="{{ url_for('admin.verify') }}" class="inline">{{ csrf() }}<button class="btn btn-primary" type="submit">Verify integrity</button></form>
+    <a class="btn" href="{{ url_for('admin.export', **filters) }}">Export CSV</a>
+  </div></div>
+{% if verification %}
+  {% if verification.ok %}
+    <div class="alert alert-success"><strong>Chain intact.</strong> {{ verification.checked }} events verified. Head #{{ verification.head_seq }} · <span class="mono">{{ verification.head_hash }}</span></div>
+  {% else %}
+    <div class="alert alert-error"><strong>Tampering detected at event #{{ verification.broken_at }}.</strong> {{ verification.reason }} ({{ verification.checked }} events verified before it.)</div>
+  {% endif %}
+{% endif %}
+<form class="card" method="get">
+  <div class="form-row">
+    <div><label for="actor">Actor</label><input id="actor" type="text" name="actor" value="{{ filters.actor }}"></div>
+    <div><label for="action">Action</label>
+      <select id="action" name="action"><option value="">Any</option>
+        {% for a in ['permissions','access_denied','login','download','view','upload','upload_version','edit_metadata','delete','restore','purge','grant','grant_changed','revoke','access_suggested','suggestion_dismissed','csrf_rejected','origin_rejected','user_created','user_disabled','user_enabled','user_role_changed','integrity_failure','verify_audit','export_audit'] %}
+        <option value="{{ a }}" {% if filters.action == a %}selected{% endif %}>{{ 'all permission changes' if a == 'permissions' else a }}</option>{% endfor %}
+      </select></div>
+    <div><label for="outcome">Result</label>
+      <select id="outcome" name="outcome"><option value="">Any</option>
+        {% for o in ['success','denied','error'] %}<option value="{{ o }}" {% if filters.outcome == o %}selected{% endif %}>{{ o }}</option>{% endfor %}</select></div>
+    <div><label for="document_id">Document id</label><input id="document_id" type="text" name="document_id" value="{{ filters.document_id }}"></div>
+    <div><label for="from">From</label><input id="from" type="date" name="from" value="{{ filters['from'] }}"></div>
+    <div><label for="to">To</label><input id="to" type="date" name="to" value="{{ filters.to }}"></div>
+  </div>
+  <div class="actions mt"><button class="btn btn-primary" type="submit">Filter</button><a class="btn" href="{{ url_for('admin.audit') }}">Clear</a></div>
+</form>
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+<div class="card"><div class="table-wrap"><table>
+  <thead><tr><th>#</th><th>When (UTC)</th><th>Actor</th><th>IP</th><th>Action</th><th>Result</th><th>Document</th><th>Details</th></tr></thead>
+  <tbody>{% for e in rows %}
+    <tr><td class="mono">{{ e.seq }}</td><td>{{ when(e.event_time) }}</td>
+      <td>{{ e.actor_username }}{% if e.actor_role %}<div class="hint">{{ e.actor_role }}</div>{% endif %}</td>
+      <td class="mono">{{ e.ip or '—' }}</td>
+      <td>{{ e.action }}{% if e.target %} → {{ e.target }}{% endif %}</td>
+      <td><span class="badge badge-{{ e.outcome }}">{{ e.outcome }}</span></td>
+      <td class="mono">{% if e.document_id %}<a href="{{ url_for('admin.audit', document_id=e.document_id) }}">{{ e.document_id[:10] }}…</a>{% else %}—{% endif %}</td>
+      <td class="wrap details-json">{{ e.details }}<div class="hint">hash {{ e.event_hash[:16] }}…</div></td></tr>
+  {% else %}<tr><td colspan="8" class="empty">No events match.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

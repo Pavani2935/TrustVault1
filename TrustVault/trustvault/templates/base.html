@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="same-origin">
+  <title>{% block title %}TrustVault{% endblock %} · TrustVault</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+{% if demo_mode %}<div class="demo-banner">Public demo: sample data only. Do not upload real confidential files.</div>{% endif %}
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="{{ url_for('web.index') }}"><span class="brand-mark">TV</span><span>TrustVault</span></a>
+    {% if me %}
+    <nav class="nav" aria-label="Main">
+      <a href="{{ url_for('web.documents') }}">Documents</a>
+      {% if me.role == 'owner' %}<a href="{{ url_for('web.upload') }}">Upload</a><a href="{{ url_for('web.trash') }}">Trash</a>{% endif %}
+      {% if me.role == 'admin' %}
+        <a href="{{ url_for('admin.dashboard') }}">Oversight</a>
+        <a href="{{ url_for('admin.audit') }}">Audit trail</a>
+        <a href="{{ url_for('admin.inventory') }}">Inventory</a>
+        <a href="{{ url_for('admin.users_page') }}">Users</a>
+      {% endif %}
+      <a href="{{ url_for('web.account') }}">Account</a>
+    </nav>
+    <div class="who">
+      <span>{{ me.username }} · <span class="badge">{{ me.role }}</span></span>
+      <form method="post" action="{{ url_for('web.logout') }}" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="btn btn-sm" type="submit">Sign out</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</header>
+<main>
+  {% for kind, message in flashes or [] %}<div class="alert alert-{{ kind }}" role="status">{{ message }}</div>{% endfor %}
+  {% block content %}{% endblock %}
+</main>
+<footer class="footer">TrustVault {{ app_version }} · access is decided on the server for every request · every access and refusal is recorded</footer>
+</body>
+</html>

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "macros.html" import csrf, when with context %}
+{% block title %}Users{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Users</h1><p class="muted">Disabling an account ends its sessions immediately. Administrators cannot reset other people's passwords or sign in as them.</p></div></div>
+<div class="grid grid-2">
+  <section class="card">
+    <h2>Accounts</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Docs</th><th>Sessions</th><th></th></tr></thead>
+      <tbody>{% for u in users %}
+        <tr>
+          <td>{{ u.username }}<div class="hint">{{ u.display_name }}{% if u.is_demo %} · demo{% endif %}</div></td>
+          <td>
+            <form method="post" action="{{ url_for('admin.user_role', user_id=u.id) }}" class="actions">{{ csrf() }}
+              <select name="role" aria-label="Role for {{ u.username }}">{% for r in ['admin','owner','viewer'] %}<option value="{{ r }}" {% if u.role == r %}selected{% endif %}>{{ r }}</option>{% endfor %}</select>
+              <button class="btn btn-sm" type="submit">Set</button></form></td>
+          <td>{% if u.is_active %}<span class="badge badge-success">active</span>{% else %}<span class="badge badge-denied">disabled</span>{% endif %}</td>
+          <td>{{ u.documents }}</td><td>{{ u.sessions }}</td>
+          <td class="actions">
+            <form method="post" action="{{ url_for('admin.user_status', user_id=u.id) }}" class="inline" data-confirm="{{ 'Disable' if u.is_active else 'Enable' }} {{ u.username }}?">{{ csrf() }}
+              <input type="hidden" name="active" value="{{ '0' if u.is_active else '1' }}">
+              <button class="btn btn-sm {{ 'btn-danger' if u.is_active }}" type="submit">{{ 'Disable' if u.is_active else 'Enable' }}</button></form>
+            <form method="post" action="{{ url_for('admin.user_sessions', user_id=u.id) }}" class="inline">{{ csrf() }}<button class="btn btn-sm" type="submit">Sign out</button></form>
+          </td>
+        </tr>
+      {% endfor %}</tbody>
+    </table></div>
+  </section>
+  <section class="card">
+    <h2>Create account</h2>
+    {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+    <form method="post">{{ csrf() }}
+      <div class="field"><label for="username">Username</label><input id="username" type="text" name="username" required maxlength="32" value="{{ form.get('username', '') }}"></div>
+      <div class="field"><label for="display_name">Display name</label><input id="display_name" type="text" name="display_name" maxlength="80" value="{{ form.get('display_name', '') }}"></div>
+      <div class="field"><label for="password">Initial password</label><input id="password" type="password" name="password" required minlength="12" autocomplete="new-password">
+        <div class="hint">Give it to the person out of band; they should change it on first sign-in.</div></div>
+      <div class="field"><label for="role">Role</label><select id="role" name="role"><option value="viewer">viewer</option><option value="owner">owner</option><option value="admin">admin</option></select></div>
+      <button class="btn btn-primary" type="submit">Create</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

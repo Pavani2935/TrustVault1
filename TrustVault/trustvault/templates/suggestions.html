@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "macros.html" import csrf with context %}
+{% block title %}Access suggestions{% endblock %}
+{% block content %}
+<div class="page-head"><div><p class="muted small mb0"><a href="{{ url_for('web.document', doc_id=doc.id) }}">← {{ doc.title }}</a></p>
+  <h1>Who should see this?</h1>
+  <p class="muted">Suggestions come from how <em>you</em> already share {{ doc.category }} documents. Nothing changes until you press Grant. The suggestion and your decision are both recorded.</p></div></div>
+<div class="card">
+  {% if suggestions %}
+  <ul class="list-plain">
+    {% for s in suggestions %}
+    <li>
+      <span><strong>{{ s.display_name }}</strong> ({{ s.username }})<span class="hint">{{ s.reason }}</span></span>
+      <span class="actions">
+        <form method="post" action="{{ url_for('web.grant', doc_id=doc.id) }}" class="inline">
+          {{ csrf() }}<input type="hidden" name="username" value="{{ s.username }}"><input type="hidden" name="permission" value="read">
+          <input type="hidden" name="source" value="suggestion"><input type="hidden" name="reason" value="{{ s.reason }}">
+          <button class="btn btn-sm btn-primary" type="submit">Grant read</button></form>
+        <form method="post" action="{{ url_for('web.dismiss_suggestion', doc_id=doc.id) }}" class="inline">
+          {{ csrf() }}<input type="hidden" name="username" value="{{ s.username }}"><button class="btn btn-sm" type="submit">Dismiss</button></form>
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty">No suggestions. You have not shared other {{ doc.category }} documents with anyone yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

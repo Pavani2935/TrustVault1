@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block content %}
+<div class="login-wrap">
+  <div class="card login-card">
+    <h1>Sign in</h1>
+    <p class="muted small">Documents here are private by default. You only see what you own or were explicitly given.</p>
+    {% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
+    <form method="post" autocomplete="on">
+      {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token }}">{% endif %}
+      <div class="field"><label for="username">Username</label>
+        <input id="username" name="username" type="text" autocomplete="username" required maxlength="64" autofocus></div>
+      <div class="field"><label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="256"></div>
+      <button class="btn btn-primary" type="submit">Sign in</button>
+    </form>
+    {% if demo_mode %}<p class="hint">Demo credentials are in the project README.</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

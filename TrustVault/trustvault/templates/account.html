@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "macros.html" import csrf, when with context %}
+{% block title %}Account{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Your account</h1><p class="muted">{{ me.display_name }} · {{ me.username }} · {{ me.role }}</p></div></div>
+<div class="grid grid-2">
+  <section class="card">
+    <h2>Change password</h2>
+    {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+    <form method="post">
+      {{ csrf() }}
+      <div class="field"><label for="current">Current password</label><input id="current" type="password" name="current" autocomplete="current-password" required></div>
+      <div class="field"><label for="new">New password</label><input id="new" type="password" name="new" autocomplete="new-password" required minlength="12" maxlength="128">
+        <div class="hint">12+ characters, three of: lowercase, uppercase, digit, symbol. Changing it signs out every other session.</div></div>
+      <button class="btn btn-primary" type="submit">Change password</button>
+    </form>
+  </section>
+  <section class="card">
+    <h2>Active sessions</h2>
+    <ul class="list-plain">{% for s in sessions %}
+      <li><span>{{ s.ip or 'unknown' }} {% if s.token_hash == current_hash %}<span class="badge badge-success">this browser</span>{% endif %}
+        <span class="hint">{{ (s.user_agent or '')[:70] }} · last seen {{ when(s.last_seen_at) }}</span></span></li>
+    {% endfor %}</ul>
+    <form method="post" action="{{ url_for('web.end_other_sessions') }}" class="mt">{{ csrf() }}<button class="btn" type="submit">Sign out all other sessions</button></form>
+  </section>
+</div>
+{% endblock %}

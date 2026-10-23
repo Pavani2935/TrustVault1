@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% from "macros.html" import csrf, perm, size, when with context %}
+{% block title %}{{ doc.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="muted small mb0">{{ doc.category }} · owned by {{ doc.owner_name }} ({{ doc.owner }})</p>
+    <h1>{{ doc.title }}</h1>
+    <div class="actions">Your access: {{ perm(doc.my_permission) }}</div>
+  </div>
+  <div class="actions">
+    <a class="btn btn-primary" href="{{ url_for('web.download', doc_id=doc.id) }}">Download</a>
+    {% if doc.can_manage %}
+      <a class="btn" href="{{ url_for('web.activity', doc_id=doc.id) }}">Who accessed this</a>
+      <form method="post" action="{{ url_for('web.delete', doc_id=doc.id) }}" class="inline" data-confirm="Move to trash? Everyone you shared it with loses access immediately.">
+        {{ csrf() }}<button class="btn btn-danger" type="submit">Delete</button></form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid grid-2">
+  <div>
+    <section class="card">
+      <h2>Details</h2>
+      <dl class="kv">
+        <dt>File</dt><dd>{{ doc.current.original_name }}</dd>
+        <dt>Type</dt><dd>{{ doc.current.content_type }}</dd>
+        <dt>Size</dt><dd>{{ size(doc.current.size_bytes) }}</dd>
+        <dt>Version</dt><dd>{{ doc.current_version }}</dd>
+        <dt>SHA-256</dt><dd class="mono">{{ doc.current.sha256 }}</dd>
+        <dt>Uploaded</dt><dd>{{ when(doc.created_at) }}</dd>
+        <dt>Last change</dt><dd>{{ when(doc.updated_at) }}</dd>
+      </dl>
+    </section>
+
+    <section class="card">
+      <h2>Versions</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>#</th><th>File</th><th>Size</th><th>By</th><th>When</th><th></th></tr></thead>
+        <tbody>{% for v in doc.versions %}
+          <tr><td>{{ v.version_no }}</td><td class="wrap">{{ v.original_name }}</td><td>{{ size(v.size_bytes) }}</td>
+            <td>{{ v.uploaded_by }}</td><td>{{ when(v.created_at) }}</td>
+            <td><a class="btn btn-sm" href="{{ url_for('web.download', doc_id=doc.id, v=v.version_no) }}">Download</a></td></tr>
+        {% endfor %}</tbody>
+      </table></div>
+    </section>
+
+    {% if doc.can_edit %}
+    <section class="card">
+      <h2>Edit</h2>
+      <form method="post" action="{{ url_for('web.edit_metadata', doc_id=doc.id) }}">
+        {{ csrf() }}
+        <div class="form-row">
+          <div class="field"><label for="title">Title</label><input id="title" type="text" name="title" value="{{ doc.title }}" maxlength="160" required></div>
+          <div class="field"><label for="category">Category</label><input id="category" type="text" name="category" value="{{ doc.category }}" maxlength="60" required></div>
+        </div>
+        <button class="btn" type="submit">Save details</button>
+      </form>
+      <hr class="mt">
+      <form method="post" action="{{ url_for('web.new_version', doc_id=doc.id) }}" enctype="multipart/form-data" class="mt">
+        {{ csrf() }}
+        <div class="field"><label for="file">Upload a new version</label><input id="file" type="file" name="file" required accept="{{ allowed|join(',') }}">
+          <div class="hint">Earlier versions are kept and remain downloadable by people with access.</div></div>
+        <button class="btn" type="submit">Upload version</button>
+      </form>
+    </section>
+    {% endif %}
+  </div>
+
+  <div>
+    {% if doc.can_manage %}
+    <section class="card">
+      <h2>People with access</h2>
+      <ul class="list-plain">
+        <li><span><strong>{{ doc.owner }}</strong> <span class="muted small">owner</span></span>{{ perm('owner') }}</li>
+        {% for gr in grants %}
+        <li>
+          <span><strong>{{ gr.username }}</strong> <span class="muted small">{{ gr.role }}{% if not gr.is_active %} · disabled{% endif %}</span>
+            <span class="hint">granted by {{ gr.granted_by }} {{ when(gr.created_at) }}{% if gr.expires_at %} · {% if gr.expired %}expired{% else %}until{% endif %} {{ gr.expires_at[:10] }}{% endif %}</span></span>
+          <span class="actions">{{ perm(gr.permission) }}
+            <form method="post" action="{{ url_for('web.revoke', doc_id=doc.id, username=gr.username) }}" class="inline" data-confirm="Revoke {{ gr.username }}'s access now?">
+              {{ csrf() }}<button class="btn btn-sm btn-danger" type="submit">Revoke</button></form></span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% if not grants %}<p class="muted small mt">Nobody else can see this document.</p>{% endif %}
+    </section>
+
+    <section class="card">
+      <h2>Grant access</h2>
+      {% if people %}
+      <form method="post" action="{{ url_for('web.grant', doc_id=doc.id) }}">
+        {{ csrf() }}
+        <div class="field"><label for="username">Person</label>
+          <select id="username" name="username" required>
+            {% for p in people %}<option value="{{ p.username }}">{{ p.display_name }} ({{ p.username }}, {{ p.role }})</option>{% endfor %}
+          </select></div>
+        <div class="form-row">
+          <div class="field"><label for="permission">Permission</label>
+            <select id="permission" name="permission"><option value="read">Read: view and download</option><option value="edit">Edit: also change details and upload versions</option></select></div>
+          <div class="field"><label for="expires_on">Expires (optional)</label><input id="expires_on" type="date" name="expires_on"></div>
+        </div>
+        <input type="hidden" name="source" value="manual">
+        <button class="btn btn-primary" type="submit">Grant access</button>
+      </form>
+      {% else %}<p class="muted small">Everyone available already has access.</p>{% endif %}
+      <p class="mt"><a href="{{ url_for('web.suggest', doc_id=doc.id) }}">Suggest who should have access</a> <span class="hint">Suggestions are never applied without your confirmation.</span></p>
+    </section>
+    {% else %}
+    <section class="card">
+      <h2>Access</h2>
+      <p class="muted small">You were granted <strong>{{ doc.my_permission }}</strong> access by the owner. Only the owner can share this document or see its access history.</p>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

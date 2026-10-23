@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "macros.html" import csrf with context %}
+{% block title %}Upload{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Upload a document</h1>
+  <p class="muted">The file is checked, encrypted with its own key and visible only to you until you grant access.</p></div></div>
+{% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
+<form class="card" method="post" enctype="multipart/form-data">
+  {{ csrf() }}
+  <div class="form-row">
+    <div class="field"><label for="title">Title</label><input id="title" type="text" name="title" maxlength="160" required value="{{ form.get('title', '') }}"></div>
+    <div class="field"><label for="category">Category</label><input id="category" type="text" name="category" maxlength="60" required list="cats" value="{{ form.get('category', '') }}">
+      <datalist id="cats"><option value="HR"><option value="Legal"><option value="Finance"><option value="Engineering"><option value="Audit"></datalist></div>
+  </div>
+  <div class="field"><label for="file">File</label><input id="file" type="file" name="file" required accept="{{ allowed|join(',') }}">
+    <div class="hint">Allowed: {{ allowed|join(', ') }} · max 10 MB. File type is verified from its contents; macros, PDF scripts and embedded files are refused.</div></div>
+  <button class="btn btn-primary" type="submit">Encrypt and upload</button>
+</form>
+{% endblock %}
